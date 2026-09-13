@@ -20,7 +20,7 @@ export default function RankedBars({ title, items }: { title?: string; items: To
                 style={{ width: `${(it.minutes / max) * 100}%`, background: colorForName(it.name) }}
               />
             </div>
-            <span className="font-mono-num tnum w-[70px] shrink-0 text-right text-[12px] text-[var(--text-2)]">
+            <span className="font-mono-num tnum w-[92px] shrink-0 whitespace-nowrap text-right text-[11px] text-[var(--text-2)]">
               {formatDurationMin(it.minutes)}
             </span>
           </div>
