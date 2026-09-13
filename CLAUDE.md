@@ -20,8 +20,9 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
   `SUPABASE_URL`/`SUPABASE_KEY` (điền tay khi chạy local, giống `secrets.toml.example` của repo
   gốc) — CHỈ đọc anon key, không đọc `SUPABASE_SERVICE_ROLE_KEY` dù tích hợp có bơm sẵn (không
   cần bỏ qua RLS).
-- **Port dần từng trang**, không viết lại toàn bộ 1 lần. Thứ tự: Hôm nay (đã xong bản đầu) →
-  Báo cáo → Nhật ký đọc sách/Gundam → Tìm kiếm → Tuỳ biến.
+- **Port dần từng trang**, không viết lại toàn bộ 1 lần. Thứ tự: Hôm nay (xong bản đầu) →
+  Báo cáo (xong sub-tab Tổng quan, sub-tab Tuần/Tháng/Năm/Dự án CHƯA làm) → Nhật ký đọc
+  sách/Gundam → Tìm kiếm → Tuỳ biến.
 - **Cắt bỏ**: import Nhật ký Day One (`parse_dayone_json`) — không port sang bản này.
 - **Giữ lại**: Kindle highlights, CalDAV (lịch Work + Reading log qua Reminders) — port khi tới
   lượt trang tương ứng.
@@ -37,8 +38,21 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
 - `src/lib/date.ts` — `todayVN()` tương đương `_today_vn()` trong app gốc: mọi logic "hôm nay"
   PHẢI qua hàm này, không dùng `new Date()` trần để suy ra ngày (Vercel chạy UTC, lệch múi giờ
   Việt Nam trong khung 00:00–07:00 giờ VN mỗi ngày).
-- `src/components/Sidebar.tsx` — nav tĩnh, mục nào chưa port đánh dấu "sắp có" (không phải link
-  chết ẩn đi — người dùng cần thấy lộ trình còn lại).
+- `src/components/Sidebar.tsx` — Client Component (cần `usePathname` để tô đậm mục đang xem),
+  nav + sub-nav (khi có) đọc từ 2 mảng tĩnh `NAV_A`/`NAV_B` + `BAOCAO_SUBS`; mục nào chưa port
+  đánh dấu "sắp có" (không phải link chết ẩn đi — người dùng cần thấy lộ trình còn lại).
+- `src/lib/analysis.ts` — `fetchAllSessions()`/`fetchMapping()`/`buildAnalysisRows()` tương
+  đương `load_db()`+`load_mapping()`+`prep_analysis_data()` ở repo gốc, NHƯNG **CHƯA port suy
+  luận Gundam/Sách** (`_assign_reading_sessions()`, cần `reading_log` + CalDAV — chưa tới lượt
+  port). Phiên tag chung "Gundam"/"Reading" hiện hiện nguyên tên tag đó ở cột `project`, giống
+  đúng hành vi "chưa suy luận được" của bản gốc khi thiếu `reading_log` — không phải bug, chỉ là
+  chưa đủ tính năng. `fetchAllSessions()` tự phân trang qua `.range()` (PostgREST giới hạn 1000
+  dòng/lần) — thêm truy vấn Supabase mới ở trang khác PHẢI nhớ làm tương tự nếu bảng có thể vượt
+  1000 dòng.
+- `src/lib/stats.ts` — `streakStats()`/`topN()`/`weeklyTotals()` tương đương
+  `_streak_stats()`/nhóm-rồi-sort/gộp-theo-tuần trong app gốc. `isoWeekKey()` (đặt ở
+  `analysis.ts` vì `stats.ts` cần import lại) tính tuần ISO Thứ Hai-đầu-tuần, tương đương
+  `%G-W%V` của pandas — KHÔNG dùng `Date.getDay()` trần (Chủ Nhật = 0, sai quy ước tuần ISO).
 - Mỗi trang mới port: 1 Server Component đọc Supabase trực tiếp (không qua API route riêng trừ
   khi cần gọi từ client), phần tương tác (form/nút) tách thành Client Component nhỏ + Server
   Action, theo đúng mẫu `NoteEditor.tsx`/`actions.ts` đã có.
