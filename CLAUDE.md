@@ -149,6 +149,18 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
     đương `style_quill()`/`QUILL_CSS` ở app gốc, nhưng không cần "bơm lặp lại mỗi 400ms vào
     iframe" vì Quill ở đây chạy thẳng trong DOM chính, không phải custom component trong iframe
     riêng như Streamlit).
+  - **Bẫy danh sách (bullet/số thứ tự) ở view mode**: Quill 2.x (bản dùng ở đây) lưu list HOÀN
+    TOÀN khác Quill 1.x (bản `streamlit-quill` dùng ở app gốc) — không còn `<ul>/<ol>` ngữ nghĩa
+    cho bullet, mà luôn `<ol><li data-list="bullet|ordered|checked|unchecked"><span
+    class="ql-ui">…</span>nội dung</li></ol>`, dấu đầu dòng/số vẽ bằng CSS `counter()`/`::before`
+    trên `span.ql-ui` (xem `quill.snow.css`), KHÔNG phải marker trình duyệt. Editor
+    (`.note-quill`) tự có đủ CSS này vì import thẳng `quill/dist/quill.snow.css`, nhưng chế độ
+    xem (`.note-content`, dùng ở `NoteEditor` khi không soạn VÀ ở `SameDayCard`) chỉ nhận HTML
+    thô nên PHẢI tự copy nguyên khối CSS counter đó (đã làm, xem `globals.css`) — thiếu bước này
+    thì bullet/số thứ tự của ghi chú MỚI (tạo trong app này) biến mất hoàn toàn ở mọi nơi hiện
+    ghi chú dạng đọc, dù ghi chú CŨ (tạo từ app Streamlit, dùng `<ul>/<ol>` thật) vẫn hiện đúng.
+    Thêm 1 nơi hiện `notes.note` mới (vd sau này port Nhật ký tuần/tháng gốc) PHẢI dùng đúng class
+    `.note-content`, không tự viết `dangerouslySetInnerHTML` trần.
 - `src/lib/records.ts` — `computeDayBadges()` tương đương `_compute_alltime_records()`: tra ngược
   ngày → badge "Kỷ lục" (hạng nhất/nhì/ba giờ nhiều nhất mọi thời đại + kỷ lục riêng theo
   Nhóm/Dự án, chỉ tính Nhóm/Dự án có ≥5 ngày dữ liệu). PHẢI truyền vào TOÀN BỘ lịch sử

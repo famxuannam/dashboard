@@ -158,8 +158,59 @@ body {
 }
 .note-content p { margin: 0 0 0.6em; }
 .note-content p:last-child { margin-bottom: 0; }
+/* Tailwind preflight ép list-style:none + padding:0 lên MỌI ul/ol -- phải khôi phục tường minh
+   cho ghi chú (view mode) vì .note-content không nằm trong CSS gốc của Quill (chỉ nội dung HTML
+   thô nó xuất ra), nếu không dấu đầu dòng/số thứ tự sẽ biến mất hoàn toàn dù HTML vẫn đúng
+   <ul>/<ol>/<li>. Áp cả cho .note-quill .ql-editor vì cùng lý do (quill.snow.css tự thêm marker
+   qua counter riêng, không dựa marker trình duyệt, nhưng vẫn cần list-style-position đúng). */
 .note-content ul, .note-content ol { margin: 0 0 0.6em; padding-left: 1.4em; }
+.note-content ul { list-style: disc outside; }
+.note-content ol { list-style: decimal outside; }
+.note-content li { display: list-item; }
+.note-content li::marker { color: var(--text-2); }
 .note-content a { color: var(--accent-dark); }
+
+/* Quill 2.x (bản đang dùng để soạn, khác hẳn Quill 1.x mà streamlit-quill của app gốc dùng) LƯU
+   danh sách kiểu KHÁC hẳn: không còn <ul>/<ol> ngữ nghĩa cho bullet, mà luôn là <ol><li
+   data-list="bullet|ordered|checked|unchecked"><span class="ql-ui">...</span>nội dung</li></ol> —
+   dấu đầu dòng/số thứ tự vẽ bằng CSS counter + ::before trên chính span.ql-ui đó (xem
+   quill.snow.css, không có trong `.note-content li` ở trên vì đó chỉ áp cho <li> ngữ nghĩa thường
+   -- ghi chú CŨ từ app Streamlit gốc, dùng Quill 1.x). Ghi chú MỚI tạo trong app này rơi vào
+   nhánh này, PHẢI copy nguyên khối CSS counter dưới đây (không thể chỉ "phục hồi list-style" như
+   trên) thì bullet/số thứ tự mới hiện đúng ở chế độ xem (span.ql-ui rỗng, không tự có nội dung
+   nếu thiếu đúng rule ::before này). */
+.note-content { counter-reset: list-0 list-1 list-2 list-3 list-4 list-5 list-6 list-7 list-8 list-9; }
+.note-content p { counter-set: list-0 list-1 list-2 list-3 list-4 list-5 list-6 list-7 list-8 list-9; }
+.note-content li[data-list] { list-style-type: none; padding-left: 1.5em; position: relative; }
+.note-content li[data-list] > .ql-ui { display: inline-block; }
+.note-content li[data-list] > .ql-ui::before {
+  display: inline-block;
+  margin-left: -1.5em;
+  margin-right: 0.3em;
+  text-align: right;
+  white-space: nowrap;
+  width: 1.2em;
+}
+.note-content li[data-list="checked"] > .ql-ui,
+.note-content li[data-list="unchecked"] > .ql-ui { color: var(--text-3); }
+.note-content li[data-list="bullet"] > .ql-ui::before { content: "\2022"; }
+.note-content li[data-list="checked"] > .ql-ui::before { content: "\2611"; }
+.note-content li[data-list="unchecked"] > .ql-ui::before { content: "\2610"; }
+.note-content li[data-list] { counter-set: list-1 list-2 list-3 list-4 list-5 list-6 list-7 list-8 list-9; }
+.note-content li[data-list="ordered"] { counter-increment: list-0; }
+.note-content li[data-list="ordered"] > .ql-ui::before { content: counter(list-0, decimal) ". "; }
+.note-content li[data-list="ordered"].ql-indent-1 { counter-increment: list-1; }
+.note-content li[data-list="ordered"].ql-indent-1 > .ql-ui::before { content: counter(list-1, lower-alpha) ". "; }
+.note-content li[data-list].ql-indent-1 { counter-set: list-2 list-3 list-4 list-5 list-6 list-7 list-8 list-9; }
+.note-content li[data-list="ordered"].ql-indent-2 { counter-increment: list-2; }
+.note-content li[data-list="ordered"].ql-indent-2 > .ql-ui::before { content: counter(list-2, lower-roman) ". "; }
+.note-content li[data-list].ql-indent-2 { counter-set: list-3 list-4 list-5 list-6 list-7 list-8 list-9; }
+.note-content li[data-list="ordered"].ql-indent-3 { counter-increment: list-3; }
+.note-content li[data-list="ordered"].ql-indent-3 > .ql-ui::before { content: counter(list-3, decimal) ". "; }
+.note-content li[data-list].ql-indent-3 { counter-set: list-4 list-5 list-6 list-7 list-8 list-9; }
+.note-content li[data-list="ordered"].ql-indent-4 { counter-increment: list-4; }
+.note-content li[data-list="ordered"].ql-indent-4 > .ql-ui::before { content: counter(list-4, lower-alpha) ". "; }
+.note-content li[data-list].ql-indent-4 { counter-set: list-5 list-6 list-7 list-8 list-9; }
 .note-empty {
   font-size: 13.5px;
   color: var(--text-3);
