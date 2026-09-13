@@ -8,7 +8,7 @@ const NAV_A = [
   { label: "Báo cáo", href: "/bao-cao", ready: true },
   { label: "Nhật ký đọc sách", href: "/sach", ready: true },
   { label: "Gundam", href: "/gundam", ready: true },
-  { label: "Tìm kiếm", href: "/tim-kiem", ready: false },
+  { label: "Tìm kiếm", href: "/tim-kiem", ready: true },
 ];
 
 const NAV_B = [{ label: "Tuỳ biến", href: "/tuy-bien", ready: false }];

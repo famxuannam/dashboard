@@ -22,7 +22,8 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
   cần bỏ qua RLS).
 - **Port dần từng trang**, không viết lại toàn bộ 1 lần. Thứ tự: Hôm nay (xong bản đầu) →
   Báo cáo (xong sub-tab Tổng quan, sub-tab Tuần/Tháng/Năm/Dự án CHƯA làm) → Nhật ký đọc
-  sách/Gundam (xong sub-tab Tổng quan, sub-tab Trích dẫn/Chi tiết CHƯA làm) → Tìm kiếm → Tuỳ biến.
+  sách/Gundam (xong sub-tab Tổng quan, sub-tab Trích dẫn/Chi tiết CHƯA làm) → Tìm kiếm (xong bản
+  rút gọn — thiếu lịch Work/Kindle vì 2 nguồn đó chưa port) → Tuỳ biến.
 - **Cắt bỏ**: import Nhật ký Day One (`parse_dayone_json`) — không port sang bản này.
 - **Giữ lại**: Kindle highlights (CHƯA port — chỉ mới port phần `reading_log`/CalDAV phục vụ suy
   luận Gundam/Sách), CalDAV (lịch Work CHƯA port, Reading log qua Reminders ĐÃ port ở
@@ -51,11 +52,21 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
   của phiên tag chung `GUNDAM_TAG`/`BOOKS_TAG` thành tên series/cuốn cụ thể (tương đương
   `_assign_reading_sessions()` — thuật toán "lần hoàn thành reminder gần nhất",
   `pd.merge_asof(direction='nearest')` port thủ công bằng binary search vì JS không có sẵn).
-  GỌI HÀM NÀY Ở MỌI TRANG ĐỌC `sessions` (Báo cáo/Sách/Gundam/sau này Tìm kiếm) — bỏ sót sẽ khiến
-  trang đó hiện nguyên tag "Gundam"/"Reading" thay vì tên cụ thể, dù trang khác đã đúng.
+  GỌI HÀM NÀY Ở MỌI TRANG ĐỌC `sessions` (Báo cáo/Sách/Gundam/Tìm kiếm) — bỏ sót sẽ khiến trang đó
+  hiện nguyên tag "Gundam"/"Reading" thay vì tên cụ thể, dù trang khác đã đúng.
   `summarizeByBook()` tổng hợp số phần đã hoàn thành + phần gần nhất theo từng cuốn/series, dùng
   ở `src/components/ReadingOverview.tsx` (Server Component dùng chung cho `/sach` và `/gundam` —
   chỉ khác nhãn "cuốn"/"series" qua props, xem `_render_reading_overview()` ở app gốc).
+- `src/lib/text.ts` — `stripHtml()` bỏ thẻ Quill HTML của cột `notes.note` để lấy text thuần
+  (dùng cho tìm kiếm VÀ cho `NoteEditor.tsx` khi cần hiện snippet — bản thân ô soạn ghi chú vẫn
+  hiện HTML thô trong `<textarea>`, CHƯA có trình soạn WYSIWYG). `snippetAround()` cắt đoạn ngắn
+  quanh từ khớp, dùng ở trang Tìm kiếm.
+- `src/app/tim-kiem/actions.ts` — `searchApp()` Server Action, tương đương `render_search()` ở
+  app gốc NHƯNG chỉ tìm trên 4/6 nguồn đã port (ghi chú chính, ghi chú nhanh, phiên Forest, phần
+  đọc/xem qua `reading_log`) — thiếu lịch Work (CalDAV) và trích dẫn Kindle vì 2 bảng đó chưa có
+  hàm fetch trong repo này. `src/components/SearchBox.tsx` (Client Component) gọi action này qua
+  debounce 300ms, KHÔNG dùng route `/api` riêng — gọi Server Action thẳng từ Client Component là
+  đủ cho trường hợp này.
 - `src/lib/stats.ts` — `streakStats()`/`topN()`/`weeklyTotals()` tương đương
   `_streak_stats()`/nhóm-rồi-sort/gộp-theo-tuần trong app gốc. `isoWeekKey()` (đặt ở
   `analysis.ts` vì `stats.ts` cần import lại) tính tuần ISO Thứ Hai-đầu-tuần, tương đương
