@@ -14,8 +14,12 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
 ## Quyết định đã chốt với người dùng
 
 - **Dùng chung Supabase project** với `forest-dashboard` — không tạo schema mới, không migrate
-  dữ liệu. Biến môi trường `SUPABASE_URL`/`SUPABASE_KEY` (anon key) giống hệt tên trong
-  `secrets.toml.example` của repo gốc.
+  dữ liệu. Kết nối qua tích hợp **Vercel Marketplace × Supabase** ("Connect an existing
+  project", trỏ đúng project cũ) — Vercel tự bơm `NEXT_PUBLIC_SUPABASE_URL`/
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY`. `src/lib/supabase.ts` chấp nhận cả tên đó lẫn
+  `SUPABASE_URL`/`SUPABASE_KEY` (điền tay khi chạy local, giống `secrets.toml.example` của repo
+  gốc) — CHỈ đọc anon key, không đọc `SUPABASE_SERVICE_ROLE_KEY` dù tích hợp có bơm sẵn (không
+  cần bỏ qua RLS).
 - **Port dần từng trang**, không viết lại toàn bộ 1 lần. Thứ tự: Hôm nay (đã xong bản đầu) →
   Báo cáo → Nhật ký đọc sách/Gundam → Tìm kiếm → Tuỳ biến.
 - **Cắt bỏ**: import Nhật ký Day One (`parse_dayone_json`) — không port sang bản này.
