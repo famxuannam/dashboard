@@ -148,6 +148,11 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
   `render_notes_journal()`/`render_on_this_day()` (Nhật ký tuần/tháng, "Ngày này năm trước"),
   CHƯA port sang các trang đó. Chip badge Nhóm/Dự án CHƯA có link nhảy tới trang chi tiết (app
   gốc trỏ `Báo cáo → Dự án`, sub-tab đó chưa port) — hiện chỉ là chip tĩnh.
+  `getGroupRecords()` (tách riêng khỏi `computeDayBadges()`, trả cả `hours` không chỉ danh sách
+  ngày) dùng trực tiếp ở `ReadingOverview.tsx` — mỗi cuốn/series LÀ 1 "project" sau khi qua
+  `applyReadingInference()`, nên cột "Kỷ lục" ở bảng "Chi tiết từng cuốn/series" (Sách/Gundam)
+  tương đương chip "Ngày nổi bật" ở Báo cáo → Dự án (app gốc, dòng ~10855) — chỉ tính trên
+  `tagRows` (phiên Reading/Gundam của đúng trang đó) vì kỷ lục 1 cuốn độc lập với Dự án khác.
 - Mỗi trang mới port: 1 Server Component đọc Supabase trực tiếp (không qua API route riêng trừ
   khi cần gọi từ client), phần tương tác (form/nút) tách thành Client Component nhỏ + Server
   Action, theo đúng mẫu `NoteEditor.tsx`/`actions.ts` đã có.

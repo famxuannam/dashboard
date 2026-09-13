@@ -1,6 +1,7 @@
 import type { AnalysisRow } from "@/lib/analysis";
 import type { BookSummary } from "@/lib/reading";
 import { streakStats, avgSessionMin, paceHoursPerDay } from "@/lib/stats";
+import { getGroupRecords } from "@/lib/records";
 import { formatDurationMin } from "@/lib/date";
 
 function formatDateVN(dateKey: string): string {
@@ -21,6 +22,7 @@ type Row = {
   partsCount: number | null;
   latestTitle: string | null;
   latestDate: string | null;
+  record: { date: string; hours: number } | null;
 };
 
 export default function ReadingOverview({
@@ -59,10 +61,16 @@ export default function ReadingOverview({
     byName.set(r.project, entry);
   }
 
+  // "Ngày nổi bật" theo từng cuốn/series -- tương đương chip "Kỷ lục" ở Báo cáo → Dự án
+  // (_compute_alltime_records()["project_records"]), tính trên ĐÚNG tagRows (chỉ phiên
+  // Reading/Gundam) vì kỷ lục của 1 cuốn không phụ thuộc dữ liệu Dự án khác.
+  const records = getGroupRecords(tagRows, "project");
+
   const names = new Set<string>([...byName.keys(), ...bookSummaries.keys()]);
   const rows: Row[] = Array.from(names).map((name) => {
     const forest = byName.get(name);
     const summary = bookSummaries.get(name);
+    const rec = records.get(name);
     return {
       name,
       hours: forest?.hours ?? 0,
@@ -71,6 +79,7 @@ export default function ReadingOverview({
       partsCount: summary?.partsCount ?? null,
       latestTitle: summary?.latestTitle ?? null,
       latestDate: summary?.latestDate.slice(0, 10) ?? null,
+      record: rec ? { date: rec.dates[0], hours: rec.hours } : null,
     };
   });
   rows.sort((a, b) => (b.latestDate ?? "").localeCompare(a.latestDate ?? "") || b.hours - a.hours);
@@ -109,7 +118,7 @@ export default function ReadingOverview({
           Chi tiết từng {itemLabel}
         </h3>
         <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[680px] border-collapse">
+          <table className="w-full min-w-[820px] border-collapse">
             <thead>
               <tr className="border-b border-[var(--border)] text-left text-[11px] uppercase tracking-wide text-[var(--text-3)]">
                 <th className="px-4 py-2.5 sm:px-5">Tên</th>
@@ -118,6 +127,7 @@ export default function ReadingOverview({
                 <th className="px-4 py-2.5 sm:px-5">Số phần</th>
                 <th className="px-4 py-2.5 sm:px-5">Số ngày</th>
                 <th className="px-4 py-2.5 sm:px-5">Tổng giờ</th>
+                <th className="px-4 py-2.5 sm:px-5">Kỷ lục</th>
               </tr>
             </thead>
             <tbody>
@@ -138,6 +148,15 @@ export default function ReadingOverview({
                   </td>
                   <td className="font-mono-num tnum px-4 py-2.5 text-[12.5px] text-[var(--text-2)] sm:px-5">
                     {r.hours > 0 ? formatDurationMin(Math.round(r.hours * 60)) : "—"}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-2.5 text-[12px] sm:px-5">
+                    {r.record ? (
+                      <span className="rounded-full bg-[var(--amber-tint)] px-2.5 py-1 font-medium text-[var(--amber)]">
+                        🏆 {formatDateVN(r.record.date)} · {formatDurationMin(Math.round(r.record.hours * 60))}
+                      </span>
+                    ) : (
+                      <span className="text-[var(--text-3)]">—</span>
+                    )}
                   </td>
                 </tr>
               ))}

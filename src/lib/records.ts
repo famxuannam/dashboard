@@ -30,25 +30,29 @@ function topDaysByHours(rows: AnalysisRow[], n: number): { dateKey: string; rank
   return ranked.filter((r) => r.rank <= n).map(({ dateKey, rank }) => ({ dateKey, rank }));
 }
 
-/** Với mỗi tên (Nhóm/Dự án) có đủ `RECORD_MIN_DAYS` ngày dữ liệu, tìm (các) ngày giữ kỷ lục giờ
- * nhiều nhất — đồng hạng thì CẢ HAI ngày đều giữ kỷ lục (khớp `_group_records()` ở app gốc). */
-function groupRecords(rows: AnalysisRow[], key: "group" | "project"): Map<string, string[]> {
+export type GroupRecord = { dates: string[]; hours: number };
+
+/** Với mỗi tên (Nhóm/Dự án/cuốn sách/series) có đủ `RECORD_MIN_DAYS` ngày dữ liệu, tìm ngày giữ
+ * kỷ lục giờ nhiều nhất — đồng hạng thì CẢ HAI ngày đều giữ kỷ lục (khớp `_group_records()` ở
+ * app gốc). Export để dùng trực tiếp ở trang Sách/Gundam (mỗi cuốn/series là 1 "project" sau khi
+ * đã qua `applyReadingInference()`), không chỉ nội bộ `computeDayBadges()`. */
+export function getGroupRecords(rows: AnalysisRow[], key: "group" | "project"): Map<string, GroupRecord> {
   const byName = new Map<string, AnalysisRow[]>();
   for (const r of rows) {
     const name = key === "group" ? r.group : r.project;
     byName.set(name, [...(byName.get(name) ?? []), r]);
   }
-  const result = new Map<string, string[]>();
+  const result = new Map<string, GroupRecord>();
   for (const [name, groupRows] of byName) {
     const distinctDays = new Set(groupRows.map((r) => r.dateKey));
     if (distinctDays.size < RECORD_MIN_DAYS) continue;
     const daily = new Map<string, number>();
     for (const r of groupRows) daily.set(r.dateKey, (daily.get(r.dateKey) ?? 0) + r.durationMin);
-    const best = Math.max(...daily.values());
+    const bestMinutes = Math.max(...daily.values());
     const bestDays = Array.from(daily.entries())
-      .filter(([, minutes]) => minutes === best)
+      .filter(([, minutes]) => minutes === bestMinutes)
       .map(([dateKey]) => dateKey);
-    result.set(name, bestDays);
+    result.set(name, { dates: bestDays, hours: bestMinutes / 60 });
   }
   return result;
 }
@@ -68,11 +72,11 @@ export function computeDayBadges(rows: AnalysisRow[]): Map<string, DayBadge[]> {
 
   // Kỷ lục Nhóm CHỈ tính trên phiên ĐÃ gán Nhóm thật (hasMapping) -- nếu không, "Nhóm" trùng tên
   // "Dự án" (fallback khi chưa gán) sẽ ra 2 badge đọc y hệt nhau cho cùng 1 khái niệm.
-  for (const [name, days] of groupRecords(rows.filter((r) => r.hasMapping), "group")) {
-    for (const d of days) add(d, { kind: "group", name });
+  for (const [name, rec] of getGroupRecords(rows.filter((r) => r.hasMapping), "group")) {
+    for (const d of rec.dates) add(d, { kind: "group", name });
   }
-  for (const [name, days] of groupRecords(rows, "project")) {
-    for (const d of days) add(d, { kind: "project", name });
+  for (const [name, rec] of getGroupRecords(rows, "project")) {
+    for (const d of rec.dates) add(d, { kind: "project", name });
   }
 
   return dayBadges;
