@@ -3,6 +3,7 @@ import { loadReadingContext, applyReadingInference } from "@/lib/reading";
 import { todayVN, addDaysToDateString, formatDurationMin } from "@/lib/date";
 import { buoiOf, averageHoursForWeekday } from "@/lib/period";
 import { fetchNoteForDate, fetchQuickNotesForDate } from "@/lib/notes";
+import { computeDayBadges } from "@/lib/records";
 import NoteEditor from "@/components/NoteEditor";
 import DayPicker from "@/components/DayPicker";
 import DayTimeline from "@/components/DayTimeline";
@@ -50,6 +51,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   ]);
   const allRows = applyReadingInference(buildAnalysisRows(sessions, mapping), readingCtx);
   const dayRows = allRows.filter((r) => r.dateKey === selectedDay).sort((a, b) => a.startTime.localeCompare(b.startTime));
+  const dayBadges = computeDayBadges(allRows).get(selectedDay) ?? [];
 
   const totalMin = dayRows.reduce((s, r) => s + r.durationMin, 0);
   const avgSessionMin = dayRows.length > 0 ? totalMin / dayRows.length : 0;
@@ -135,7 +137,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </>
       )}
 
-      <NoteEditor date={selectedDay} initialNote={note} quickNotes={quickNotes} />
+      <NoteEditor date={selectedDay} initialNote={note} quickNotes={quickNotes} badges={dayBadges} />
 
       <div className="rounded-[14px] border border-[var(--border)] bg-[var(--card)] p-0 overflow-hidden">
         <h3 className="p-4 pb-0 text-[14px] font-semibold sm:p-5 sm:pb-0">Danh sách phiên</h3>

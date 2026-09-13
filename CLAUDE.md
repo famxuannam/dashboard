@@ -140,6 +140,14 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
     đương `style_quill()`/`QUILL_CSS` ở app gốc, nhưng không cần "bơm lặp lại mỗi 400ms vào
     iframe" vì Quill ở đây chạy thẳng trong DOM chính, không phải custom component trong iframe
     riêng như Streamlit).
+- `src/lib/records.ts` — `computeDayBadges()` tương đương `_compute_alltime_records()`: tra ngược
+  ngày → badge "Kỷ lục" (hạng nhất/nhì/ba giờ nhiều nhất mọi thời đại + kỷ lục riêng theo
+  Nhóm/Dự án, chỉ tính Nhóm/Dự án có ≥5 ngày dữ liệu). PHẢI truyền vào TOÀN BỘ lịch sử
+  (`allRows` sau `applyReadingInference()`), không phải rows đã lọc theo ngày/kỳ. Hiện chỉ tính
+  và hiện ở trang **Hôm nay** (`NoteEditor`/`DayBadges`) — app gốc còn dùng `day_badges` này ở
+  `render_notes_journal()`/`render_on_this_day()` (Nhật ký tuần/tháng, "Ngày này năm trước"),
+  CHƯA port sang các trang đó. Chip badge Nhóm/Dự án CHƯA có link nhảy tới trang chi tiết (app
+  gốc trỏ `Báo cáo → Dự án`, sub-tab đó chưa port) — hiện chỉ là chip tĩnh.
 - Mỗi trang mới port: 1 Server Component đọc Supabase trực tiếp (không qua API route riêng trừ
   khi cần gọi từ client), phần tương tác (form/nút) tách thành Client Component nhỏ + Server
   Action, theo đúng mẫu `NoteEditor.tsx`/`actions.ts` đã có.

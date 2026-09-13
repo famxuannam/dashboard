@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import { saveDayNote, updateQuickNoteText, deleteQuickNoteById } from "@/app/actions";
 import QuillEditor from "@/components/QuillEditor";
+import DayBadges from "@/components/DayBadges";
+import type { DayBadge } from "@/lib/records";
 
 type QuickNote = { id: number; timeLabel: string; text: string };
 
@@ -18,10 +20,12 @@ export default function NoteEditor({
   date,
   initialNote,
   quickNotes,
+  badges = [],
 }: {
   date: string;
   initialNote: string;
   quickNotes: QuickNote[];
+  badges?: DayBadge[];
 }) {
   const [savedNote, setSavedNote] = useState(initialNote);
   const [notes, setNotes] = useState(quickNotes);
@@ -103,6 +107,8 @@ export default function NoteEditor({
         </div>
 
         <div className="flex flex-col gap-3">
+          <DayBadges badges={badges} />
+
           {notes.length > 0 && (
             <div className="flex flex-col gap-2">
               <span className="text-[11.5px] font-semibold uppercase tracking-wide text-[var(--text-3)]">
