@@ -19,6 +19,39 @@ export function buoiOf(hour: number): string {
   return "Khuya";
 }
 
+function toEpochMinutes(ts: string): number {
+  const m = ts.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (!m) return 0;
+  const [, y, mo, d, h, mi] = m;
+  return Date.UTC(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi)) / 60000;
+}
+
+export type SessionFlowStats = { longestBlockMin: number; longestGapMin: number | null };
+
+/** Khối tập trung liền mạch dài nhất (các phiên cách nhau < `gapMin` phút gộp làm 1 khối) +
+ * khoảng nghỉ dài nhất giữa 2 khối — tương đương `_session_flow_stats()`. `rows` PHẢI đã sắp
+ * theo `startTime` tăng dần. */
+export function sessionFlowStats(rows: AnalysisRow[], gapMin = 15): SessionFlowStats {
+  if (rows.length === 0) return { longestBlockMin: 0, longestGapMin: null };
+  const blocks: { start: number; end: number }[] = [
+    { start: toEpochMinutes(rows[0].startTime), end: toEpochMinutes(rows[0].endTime) },
+  ];
+  for (const r of rows.slice(1)) {
+    const start = toEpochMinutes(r.startTime);
+    const end = toEpochMinutes(r.endTime);
+    const last = blocks[blocks.length - 1];
+    if (start - last.end < gapMin) {
+      last.end = Math.max(last.end, end);
+    } else {
+      blocks.push({ start, end });
+    }
+  }
+  const longestBlockMin = Math.max(...blocks.map((b) => b.end - b.start));
+  if (blocks.length < 2) return { longestBlockMin, longestGapMin: null };
+  const gaps = blocks.slice(1).map((b, i) => b.start - blocks[i].end);
+  return { longestBlockMin, longestGapMin: Math.max(...gaps) };
+}
+
 /** Thứ Hai (00:00) của tuần ISO "YYYY-Www", dạng "YYYY-MM-DD". */
 export function mondayOfIsoWeek(weekKey: string): string {
   const [yearStr, wStr] = weekKey.split("-W");

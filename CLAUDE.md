@@ -26,12 +26,12 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
   kiếm (xong bản rút gọn — thiếu lịch Work/Kindle vì 2 nguồn đó chưa port) → Tuỳ biến (mới port
   2 mục: gán Dự án→Nhóm + tải CSV Forest lên; đồng bộ lịch/Reminder, import Kindle, engine giao
   diện, backup/khôi phục/xoá toàn bộ CHƯA làm).
-- **Trang Hôm nay** đã có day picker (`?day=`, nút ◀▶ + input date), Tổng quan ngày (KPI + so
-  sánh vs cùng-thứ-tuần-trước/TB cùng-thứ), Dòng thời gian (`DayTimeline`), Phân bổ thời gian
-  (`RankedBars`), Ghi chú, Danh sách phiên đầy đủ. CHƯA làm: 2 chương "Ngày này tuần trước"/"Ngày
-  này năm trước" (danh sách phiên chi tiết, không chỉ chip so sánh) và `_session_flow_stats()`
-  (khối liền mạch dài nhất/khoảng nghỉ dài nhất) — bỏ qua có chủ đích để giữ phạm vi vừa phải,
-  không phải bug.
+- **Trang Hôm nay** đã đầy đủ theo app gốc: day picker (`?day=`, nút ◀▶ + input date), Tổng quan
+  ngày (KPI + so sánh vs cùng-thứ-tuần-trước/TB cùng-thứ + khối liền mạch/khoảng nghỉ dài nhất
+  qua `sessionFlowStats()`), Dòng thời gian (`DayTimeline`), Phân bổ thời gian (`RankedBars`),
+  Ghi chú + badge Kỷ lục, Danh sách phiên, "Ngày này tuần trước" (`SameDayCard`, 1 thẻ) và "Ngày
+  này năm trước" (nhiều thẻ, mỗi năm khớp cùng ngày/tháng). CHƯA port: chip Lịch (work_calendar,
+  vì CalDAV chưa port) trong 2 mục "Ngày này..." — app gốc có, bản này thiếu đúng nguồn đó.
 - **Báo cáo → Tuần** đã có billboard + so sánh tuần trước/TB, Nhóm & dự án (`RankedBars`), biểu
   đồ theo ngày, Nhật ký (ghi chú/ghi chú nhanh trong tuần), bảng số liệu 7 ngày. So sánh "TB"
   dùng trung bình đơn giản trên mọi tuần khác (KHÔNG cắt theo số ngày đã trôi qua như
@@ -103,11 +103,14 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
   `mondayOfIsoWeek()`/`prevWeekKey()`/`nextWeekKey()` (chuyển đổi qua lại tuần ISO ↔ ngày Thứ
   Hai), `buildWeekSummary()` (tổng hợp 1 tuần: tổng giờ, hoạt động mấy/7 ngày, xếp hạng Nhóm/Dự
   án, giờ từng ngày Mon..Sun), `avgWeekHoursExcluding()`/`averageHoursForWeekday()` (trung bình
-  đơn giản, xem ghi chú "so sánh TB" ở trên), `buoiOf()` port `_buoi_of()`.
-- `src/lib/notes.ts` — `fetchNotesInRange()`/`fetchQuickNotesInRange()` (nhiều ngày, dùng ở Báo
-  cáo → Tuần) và `fetchNoteForDate()`/`fetchQuickNotesForDate()` (1 ngày, dùng ở Hôm nay) — tách
-  khỏi `src/app/tim-kiem/actions.ts` (nơi có bản fetch-toàn-bộ riêng, KHÔNG dùng lại 2 hàm range ở
-  đây vì Tìm kiếm cần TOÀN BỘ lịch sử chứ không phải 1 khoảng ngày).
+  đơn giản, xem ghi chú "so sánh TB" ở trên), `buoiOf()` port `_buoi_of()`, `sessionFlowStats()`
+  port `_session_flow_stats()` (khối liền mạch dài nhất/khoảng nghỉ dài nhất — parse giờ bằng
+  regex thủ công như `forest-import.ts`, không qua `new Date()`).
+- `src/lib/notes.ts` — `fetchNotesInRange()`/`fetchQuickNotesInRange()` (1 khoảng ngày liền, dùng
+  ở Báo cáo → Tuần), `fetchNoteForDate()`/`fetchQuickNotesForDate()` (đúng 1 ngày, dùng ở Hôm
+  nay), và `fetchAllNotesMap()`/`fetchAllQuickNotesMap()` (TOÀN BỘ lịch sử, dùng ở Tìm kiếm VÀ
+  "Ngày này tuần trước/năm trước" ở Hôm nay — 2 hàm này ĐÃ chuyển vào đây từ
+  `src/app/tim-kiem/actions.ts` khi Hôm nay cũng cần tới, không còn định nghĩa riêng ở đó nữa).
 - `src/lib/colors.ts` — `colorForName()` suy màu HSL ổn định từ tên (hash chuỗi), dùng cho
   `DayTimeline`/`RankedBars` — bản rút gọn, CHƯA có bảng màu cố định theo Nhóm + sắc độ cho Dự án
   con như `build_color_map()` ở app gốc (2 lần mở cùng 1 trang có thể ra 2 màu khác nhau cho cùng
@@ -121,6 +124,12 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
 - `src/components/DayPicker.tsx` — Client Component (cần `useRouter` để điều hướng `?day=`) with
   nút ◀▶ + `<input type="date">`, giới hạn `max` = hôm nay (không cho chọn ngày tương lai, app
   thuần hồi cứu).
+- `src/components/SameDayCard.tsx` — 1 dòng tóm tắt 1 ngày bất kỳ (badge Kỷ lục, chip tổng
+  quan/đọc sách, ghi chú nhanh, ghi chú chính) — dùng ở cả "Ngày này tuần trước" (1 thẻ) và "Ngày
+  này năm trước" (nhiều thẻ, mỗi năm 1 thẻ) trong `src/app/page.tsx`, tương đương
+  `render_same_day_last_week()`/`render_on_this_day()` gộp lại thành 1 component chung (khác biệt
+  duy nhất giữa 2 nơi gọi là `label` truyền vào — ngắn "Thứ Bảy, 12/09" hay chỉ năm "2024"). CHƯA
+  có chip "Lịch" (work_calendar/CalDAV chưa port) mà app gốc có ở cả 2 nơi này.
 - **`src/components/QuillEditor.tsx`/`NoteEditor.tsx`** — ô soạn ghi chú dùng `quill` thật (xem
   "Ngoại lệ không thêm dependency" ở trên), tương đương `render_note_editor()` ở app gốc:
   - `QuillEditor` cố ý **uncontrolled** giống hệt `streamlit-quill` — `initialHtml` chỉ áp dụng

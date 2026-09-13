@@ -1,49 +1,9 @@
 "use server";
 
-import { getSupabaseServerClient } from "@/lib/supabase";
 import { fetchAllSessions, fetchMapping, buildAnalysisRows } from "@/lib/analysis";
 import { loadReadingContext, applyReadingInference } from "@/lib/reading";
+import { fetchAllNotesMap, fetchAllQuickNotesMap } from "@/lib/notes";
 import { stripHtml, snippetAround } from "@/lib/text";
-
-const PAGE_SIZE = 1000;
-
-async function fetchAllNotes(): Promise<{ dateKey: string; note: string }[]> {
-  const supabase = getSupabaseServerClient();
-  const rows: { dateKey: string; note: string }[] = [];
-  let from = 0;
-  for (;;) {
-    const { data, error } = await supabase
-      .from("notes")
-      .select("note_date, note")
-      .order("note_date", { ascending: true })
-      .range(from, from + PAGE_SIZE - 1);
-    if (error) throw new Error(error.message);
-    if (!data || data.length === 0) break;
-    for (const r of data) rows.push({ dateKey: r.note_date, note: r.note });
-    if (data.length < PAGE_SIZE) break;
-    from += PAGE_SIZE;
-  }
-  return rows;
-}
-
-async function fetchAllQuickNotes(): Promise<{ dateKey: string; text: string }[]> {
-  const supabase = getSupabaseServerClient();
-  const rows: { dateKey: string; text: string }[] = [];
-  let from = 0;
-  for (;;) {
-    const { data, error } = await supabase
-      .from("quick_notes")
-      .select("ts, note_text")
-      .order("ts", { ascending: true })
-      .range(from, from + PAGE_SIZE - 1);
-    if (error) throw new Error(error.message);
-    if (!data || data.length === 0) break;
-    for (const r of data) rows.push({ dateKey: r.ts.slice(0, 10), text: r.note_text });
-    if (data.length < PAGE_SIZE) break;
-    from += PAGE_SIZE;
-  }
-  return rows;
-}
 
 export type DayHit = {
   dateKey: string;
@@ -63,9 +23,9 @@ export async function searchApp(query: string): Promise<DayHit[]> {
   if (q.length < 2) return [];
   const qLower = q.toLowerCase();
 
-  const [notes, quickNotes, sessions, mapping, readingCtx] = await Promise.all([
-    fetchAllNotes(),
-    fetchAllQuickNotes(),
+  const [noteByDay, quickNotesByDay, sessions, mapping, readingCtx] = await Promise.all([
+    fetchAllNotesMap(),
+    fetchAllQuickNotesMap(),
     fetchAllSessions(),
     fetchMapping(),
     loadReadingContext(),
@@ -73,10 +33,9 @@ export async function searchApp(query: string): Promise<DayHit[]> {
   const rows = applyReadingInference(buildAnalysisRows(sessions, mapping), readingCtx);
   const readingEntries = [...readingCtx.rlBooks, ...readingCtx.rlGundam];
 
-  const noteByDay = new Map(notes.map((n) => [n.dateKey, n.note]));
   const quickByDay = new Map<string, string[]>();
-  for (const q2 of quickNotes) {
-    quickByDay.set(q2.dateKey, [...(quickByDay.get(q2.dateKey) ?? []), q2.text]);
+  for (const [dateKey, entries] of quickNotesByDay) {
+    quickByDay.set(dateKey, entries.map((e) => e.text));
   }
   const sessionsByDay = new Map<string, { time: string; project: string }[]>();
   for (const r of rows) {
