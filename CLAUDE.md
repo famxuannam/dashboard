@@ -20,12 +20,23 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
   `SUPABASE_URL`/`SUPABASE_KEY` (điền tay khi chạy local, giống `secrets.toml.example` của repo
   gốc) — CHỈ đọc anon key, không đọc `SUPABASE_SERVICE_ROLE_KEY` dù tích hợp có bơm sẵn (không
   cần bỏ qua RLS).
-- **Port dần từng trang**, không viết lại toàn bộ 1 lần. Thứ tự: Hôm nay (xong bản đầu) →
-  Báo cáo (xong sub-tab Tổng quan, sub-tab Tuần/Tháng/Năm/Dự án CHƯA làm) → Nhật ký đọc
-  sách/Gundam (xong sub-tab Tổng quan, sub-tab Trích dẫn/Chi tiết CHƯA làm) → Tìm kiếm (xong bản
-  rút gọn — thiếu lịch Work/Kindle vì 2 nguồn đó chưa port) → Tuỳ biến (mới port 2 mục: gán Dự
-  án→Nhóm + tải CSV Forest lên; đồng bộ lịch/Reminder, import Kindle, engine giao diện, backup/
-  khôi phục/xoá toàn bộ CHƯA làm).
+- **Port dần từng trang**, không viết lại toàn bộ 1 lần. Thứ tự: Hôm nay (đầy đủ — xem ghi chú
+  bên dưới về phần còn thiếu) → Báo cáo (Tổng quan + Tuần đầy đủ, Tháng/Năm/Dự án CHƯA làm) →
+  Nhật ký đọc sách/Gundam (xong sub-tab Tổng quan, sub-tab Trích dẫn/Chi tiết CHƯA làm) → Tìm
+  kiếm (xong bản rút gọn — thiếu lịch Work/Kindle vì 2 nguồn đó chưa port) → Tuỳ biến (mới port
+  2 mục: gán Dự án→Nhóm + tải CSV Forest lên; đồng bộ lịch/Reminder, import Kindle, engine giao
+  diện, backup/khôi phục/xoá toàn bộ CHƯA làm).
+- **Trang Hôm nay** đã có day picker (`?day=`, nút ◀▶ + input date), Tổng quan ngày (KPI + so
+  sánh vs cùng-thứ-tuần-trước/TB cùng-thứ), Dòng thời gian (`DayTimeline`), Phân bổ thời gian
+  (`RankedBars`), Ghi chú, Danh sách phiên đầy đủ. CHƯA làm: 2 chương "Ngày này tuần trước"/"Ngày
+  này năm trước" (danh sách phiên chi tiết, không chỉ chip so sánh) và `_session_flow_stats()`
+  (khối liền mạch dài nhất/khoảng nghỉ dài nhất) — bỏ qua có chủ đích để giữ phạm vi vừa phải,
+  không phải bug.
+- **Báo cáo → Tuần** đã có billboard + so sánh tuần trước/TB, Nhóm & dự án (`RankedBars`), biểu
+  đồ theo ngày, Nhật ký (ghi chú/ghi chú nhanh trong tuần), bảng số liệu 7 ngày. So sánh "TB"
+  dùng trung bình đơn giản trên mọi tuần khác (KHÔNG cắt theo số ngày đã trôi qua như
+  `_period_elapsed_context()` ở app gốc — nếu đang xem tuần hiện tại chưa hết, số TB sẽ hơi lệch
+  so với app gốc, chấp nhận được cho MVP).
 - **Cắt bỏ**: import Nhật ký Day One (`parse_dayone_json`) — không port sang bản này.
 - **Giữ lại**: Kindle highlights (CHƯA port — chỉ mới port phần `reading_log`/CalDAV phục vụ suy
   luận Gundam/Sách), CalDAV (lịch Work CHƯA port, Reading log qua Reminders ĐÃ port ở
@@ -83,6 +94,28 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
   `_streak_stats()`/nhóm-rồi-sort/gộp-theo-tuần trong app gốc. `isoWeekKey()` (đặt ở
   `analysis.ts` vì `stats.ts` cần import lại) tính tuần ISO Thứ Hai-đầu-tuần, tương đương
   `%G-W%V` của pandas — KHÔNG dùng `Date.getDay()` trần (Chủ Nhật = 0, sai quy ước tuần ISO).
+- `src/lib/period.ts` — tiện ích tuần/ngày dùng chung cho Hôm nay + Báo cáo → Tuần:
+  `mondayOfIsoWeek()`/`prevWeekKey()`/`nextWeekKey()` (chuyển đổi qua lại tuần ISO ↔ ngày Thứ
+  Hai), `buildWeekSummary()` (tổng hợp 1 tuần: tổng giờ, hoạt động mấy/7 ngày, xếp hạng Nhóm/Dự
+  án, giờ từng ngày Mon..Sun), `avgWeekHoursExcluding()`/`averageHoursForWeekday()` (trung bình
+  đơn giản, xem ghi chú "so sánh TB" ở trên), `buoiOf()` port `_buoi_of()`.
+- `src/lib/notes.ts` — `fetchNotesInRange()`/`fetchQuickNotesInRange()` (nhiều ngày, dùng ở Báo
+  cáo → Tuần) và `fetchNoteForDate()`/`fetchQuickNotesForDate()` (1 ngày, dùng ở Hôm nay) — tách
+  khỏi `src/app/tim-kiem/actions.ts` (nơi có bản fetch-toàn-bộ riêng, KHÔNG dùng lại 2 hàm range ở
+  đây vì Tìm kiếm cần TOÀN BỘ lịch sử chứ không phải 1 khoảng ngày).
+- `src/lib/colors.ts` — `colorForName()` suy màu HSL ổn định từ tên (hash chuỗi), dùng cho
+  `DayTimeline`/`RankedBars` — bản rút gọn, CHƯA có bảng màu cố định theo Nhóm + sắc độ cho Dự án
+  con như `build_color_map()` ở app gốc (2 lần mở cùng 1 trang có thể ra 2 màu khác nhau cho cùng
+  1 cái tên nếu sau này đổi thuật toán hash — chấp nhận được vì chỉ ảnh hưởng thẩm mỹ, không phải
+  dữ liệu).
+- `src/components/RankedBars.tsx` — thanh ngang xếp hạng theo phút, dùng ở Báo cáo → Tuần ("Nhóm
+  & dự án") VÀ Hôm nay ("Phân bổ thời gian") — 1 component chung thay vì viết riêng từng nơi.
+- `src/components/DayTimeline.tsx` — dải giờ 24h vẽ khối theo `start_time`/`end_time` thật (không
+  phải ước lượng), tương đương `render_day_timeline()` ở app gốc nhưng ĐƠN GIẢN hơn nhiều (không
+  co giãn/click, không src hiện today marker riêng).
+- `src/components/DayPicker.tsx` — Client Component (cần `useRouter` để điều hướng `?day=`) with
+  nút ◀▶ + `<input type="date">`, giới hạn `max` = hôm nay (không cho chọn ngày tương lai, app
+  thuần hồi cứu).
 - Mỗi trang mới port: 1 Server Component đọc Supabase trực tiếp (không qua API route riêng trừ
   khi cần gọi từ client), phần tương tác (form/nút) tách thành Client Component nhỏ + Server
   Action, theo đúng mẫu `NoteEditor.tsx`/`actions.ts` đã có.

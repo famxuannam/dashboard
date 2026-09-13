@@ -15,10 +15,10 @@ const NAV_B = [{ label: "Tuỳ biến", href: "/tuy-bien", ready: true }];
 
 const BAOCAO_SUBS = [
   { label: "Tổng quan", href: "/bao-cao", ready: true },
-  { label: "Tuần", ready: false },
-  { label: "Tháng", ready: false },
-  { label: "Năm", ready: false },
-  { label: "Dự án", ready: false },
+  { label: "Tuần", href: "/bao-cao/tuan", ready: true },
+  { label: "Tháng", href: undefined, ready: false },
+  { label: "Năm", href: undefined, ready: false },
+  { label: "Dự án", href: undefined, ready: false },
 ];
 
 function NavRow({ label, ready, active, href }: { label: string; ready: boolean; active: boolean; href: string }) {
@@ -66,25 +66,36 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex flex-col gap-0.5">
-        {NAV_A.map((item) => (
-          <NavRow key={item.href} label={item.label} ready={item.ready} href={item.href} active={pathname === item.href} />
-        ))}
+        {NAV_A.map((item) => {
+          const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`));
+          return <NavRow key={item.href} label={item.label} ready={item.ready} href={item.href} active={active} />;
+        })}
         {onBaoCao && (
           <div className="ml-[13px] mr-1 mt-0.5 flex flex-col gap-px border-l border-[var(--divider)] pl-2.5">
-            {BAOCAO_SUBS.map((sub) => (
-              <div
-                key={sub.label}
-                className={[
-                  "rounded-[6px] px-2 py-1.5 text-[12.6px]",
-                  sub.ready
-                    ? "font-semibold text-[var(--accent-dark)]"
+            {BAOCAO_SUBS.map((sub) => {
+              const active = sub.href === pathname;
+              const className = [
+                "rounded-[6px] px-2 py-1.5 text-[12.6px]",
+                active
+                  ? "font-semibold bg-[var(--card-tl)] text-[var(--accent-dark)]"
+                  : sub.ready
+                    ? "text-[var(--text-2)] hover:text-[var(--text)]"
                     : "text-[var(--text-4)]",
-                ].join(" ")}
-              >
-                {sub.label}
-                {!sub.ready && <span className="ml-1.5 text-[9.5px] uppercase tracking-wide">sắp có</span>}
-              </div>
-            ))}
+              ].join(" ");
+              if (sub.ready && sub.href) {
+                return (
+                  <Link key={sub.label} href={sub.href} className={className}>
+                    {sub.label}
+                  </Link>
+                );
+              }
+              return (
+                <div key={sub.label} className={className}>
+                  {sub.label}
+                  {!sub.ready && <span className="ml-1.5 text-[9.5px] uppercase tracking-wide">sắp có</span>}
+                </div>
+              );
+            })}
           </div>
         )}
       </nav>

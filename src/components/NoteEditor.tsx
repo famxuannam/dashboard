@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { saveDayNote } from "@/app/actions";
 
-type QuickNote = { id: number; ts: string; note_text: string };
+type QuickNote = { id: number; note_text: string };
 
 export default function NoteEditor({
   date,
