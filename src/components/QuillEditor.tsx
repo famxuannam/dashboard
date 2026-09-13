@@ -41,6 +41,7 @@ export default function QuillEditor({
     const container = containerRef.current;
     if (!container) return;
     let cancelled = false;
+    let toolbarEl: Element | null = null;
 
     import("quill").then(({ default: Quill }) => {
       if (cancelled || !container) return;
@@ -49,12 +50,19 @@ export default function QuillEditor({
         modules: { toolbar: TOOLBAR },
         placeholder,
       });
+      // Quill chèn toolbar làm SIBLING đứng TRƯỚC `container` trong DOM thật (không phải bên
+      // trong nó) -- nằm NGOÀI cây mà React theo dõi vì React chỉ render đúng 1 div (`container`).
+      // Khi component unmount (vd đổi từ chế độ soạn sang chế độ xem sau khi bấm "Cập nhật"),
+      // React chỉ gỡ đúng `container`, để sót lại toolbar mồ côi trên DOM -- phải tự tay gỡ ở
+      // cleanup bên dưới, xem `toolbarEl`.
+      toolbarEl = container.previousElementSibling;
       if (initialHtml) quill.clipboard.dangerouslyPasteHTML(initialHtml);
       quill.on("text-change", () => onChange(quill.root.innerHTML));
     });
 
     return () => {
       cancelled = true;
+      toolbarEl?.remove();
       container.replaceChildren();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

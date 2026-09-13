@@ -172,6 +172,16 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
     Cột phải của `NoteEditor` vì vậy dùng `space-y-3` (margin giữa các con, không tạo flex
     context) thay vì `flex flex-col gap-3`. Nếu sau này cần đặt `QuillEditor` trong 1 layout mới,
     KHÔNG dùng flex/grid column làm tổ tiên trực tiếp hoặc gần — dùng `space-y-*`/margin thường.
+  - **Bẫy unmount: toolbar mồ côi trên DOM sau khi thoát chế độ soạn**. Quill chèn `.ql-toolbar`
+    làm SIBLING đứng NGAY TRƯỚC `container` (phần tử `<div ref={containerRef}>` mà `QuillEditor`
+    render) — nằm NGOÀI cây React theo dõi (React chỉ biết đúng 1 div nó tự render). Khi
+    `NoteEditor` chuyển `isEditing` về false (bấm Cập nhật/Huỷ), React unmount `QuillEditor`,
+    NHƯNG chỉ gỡ đúng `container` — toolbar bị bỏ sót, còn sót lại trên DOM (bug thật: sau khi Cập
+    nhật/Huỷ, thanh toolbar vẫn hiện dù ô soạn đã đóng). Cleanup effect của `QuillEditor` PHẢI tự
+    tay `toolbarEl.remove()` (lấy qua `container.previousElementSibling` ngay sau khi tạo Quill
+    instance) TRƯỚC KHI/CÙNG LÚC `container.replaceChildren()` — bất kỳ thay đổi nào sau này vào
+    cách Quill khởi tạo (vd đổi toolbar thành 1 DOM element có sẵn thay vì mảng cấu hình) phải
+    kiểm tra lại chỗ này, vì cách Quill chèn toolbar có thể đổi theo config.
 - `src/lib/records.ts` — `computeDayBadges()` tương đương `_compute_alltime_records()`: tra ngược
   ngày → badge "Kỷ lục" (hạng nhất/nhì/ba giờ nhiều nhất mọi thời đại + kỷ lục riêng theo
   Nhóm/Dự án, chỉ tính Nhóm/Dự án có ≥5 ngày dữ liệu). PHẢI truyền vào TOÀN BỘ lịch sử
