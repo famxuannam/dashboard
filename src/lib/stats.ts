@@ -52,6 +52,22 @@ export function topN(rows: AnalysisRow[], key: "group" | "project", n: number): 
     .slice(0, n);
 }
 
+/** Nhịp gần đây: giờ/ngày trung bình trong `days` ngày gần nhất (tính cả `todayVN()`) —
+ * tương đương closure `_pace(n)` ở render_reading_log(). */
+export function paceHoursPerDay(rows: AnalysisRow[], days: number): number {
+  const today = todayVN();
+  const [y, m, d] = today.split("-").map(Number);
+  const todayUTC = Date.UTC(y, m - 1, d);
+  const cutoffUTC = todayUTC - (days - 1) * 86400000;
+  let totalMin = 0;
+  for (const r of rows) {
+    const [ry, rm, rd] = r.dateKey.split("-").map(Number);
+    const rUTC = Date.UTC(ry, rm - 1, rd);
+    if (rUTC >= cutoffUTC && rUTC <= todayUTC) totalMin += r.durationMin;
+  }
+  return totalMin / 60 / days;
+}
+
 export type WeekPoint = { weekKey: string; monday: string; hours: number };
 
 /** Tổng giờ mỗi tuần, `weeks` tuần ISO gần nhất tính đến tuần chứa `todayVN()`. */

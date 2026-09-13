@@ -6,8 +6,8 @@ import { usePathname } from "next/navigation";
 const NAV_A = [
   { label: "Hôm nay", href: "/", ready: true },
   { label: "Báo cáo", href: "/bao-cao", ready: true },
-  { label: "Nhật ký đọc sách", href: "/sach", ready: false },
-  { label: "Gundam", href: "/gundam", ready: false },
+  { label: "Nhật ký đọc sách", href: "/sach", ready: true },
+  { label: "Gundam", href: "/gundam", ready: true },
   { label: "Tìm kiếm", href: "/tim-kiem", ready: false },
 ];
 

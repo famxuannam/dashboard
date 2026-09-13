@@ -12,6 +12,7 @@ export type AnalysisRow = SessionRow & {
   hasMapping: boolean;
   dateKey: string; // "YYYY-MM-DD" theo giờ treo tường, dùng làm "Ngày"
   weekKey: string; // "YYYY-Www" tuần ISO (Thứ Hai đầu tuần)
+  projectOriginal: string; // "Dự án gốc" — tên tag Forest thật, trước khi applyReadingInference() ghi đè `project`
 };
 
 const PAGE_SIZE = 1000;
@@ -84,7 +85,11 @@ export function mondayOfWeek(dateKey: string): string {
   return date.toISOString().slice(0, 10);
 }
 
-/** Tương đương prep_analysis_data() (bản rút gọn — CHƯA port suy luận Gundam/Sách theo tag). */
+/**
+ * Tương đương phần đầu của prep_analysis_data() (join mapping + sinh cột kỳ). Suy luận
+ * Gundam/Sách theo tag chung (phần còn lại của prep_analysis_data()) nằm ở
+ * `applyReadingInference()` trong reading.ts — gọi SAU hàm này, vì cần đọc thêm `reading_log`.
+ */
 export function buildAnalysisRows(sessions: SessionRow[], mapping: Map<string, string>): AnalysisRow[] {
   return sessions.map((s) => {
     const mapped = mapping.get(s.project);
@@ -95,6 +100,7 @@ export function buildAnalysisRows(sessions: SessionRow[], mapping: Map<string, s
       hasMapping: Boolean(mapped && mapped.trim() !== ""),
       dateKey,
       weekKey: isoWeekKey(dateKey),
+      projectOriginal: s.project,
     };
   });
 }

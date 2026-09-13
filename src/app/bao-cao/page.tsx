@@ -1,6 +1,7 @@
 import { fetchAllSessions, fetchMapping, buildAnalysisRows } from "@/lib/analysis";
 import { streakStats, avgSessionMin, topN, weeklyTotals } from "@/lib/stats";
 import { formatDurationMin } from "@/lib/date";
+import { loadReadingContext, applyReadingInference } from "@/lib/reading";
 
 export const dynamic = "force-dynamic";
 
@@ -20,8 +21,12 @@ function formatDateVN(dateKey: string): string {
 }
 
 export default async function BaoCaoPage() {
-  const [sessions, mapping] = await Promise.all([fetchAllSessions(), fetchMapping()]);
-  const rows = buildAnalysisRows(sessions, mapping);
+  const [sessions, mapping, readingCtx] = await Promise.all([
+    fetchAllSessions(),
+    fetchMapping(),
+    loadReadingContext(),
+  ]);
+  const rows = applyReadingInference(buildAnalysisRows(sessions, mapping), readingCtx);
 
   if (rows.length === 0) {
     return (

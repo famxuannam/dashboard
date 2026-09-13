@@ -22,10 +22,11 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
   cần bỏ qua RLS).
 - **Port dần từng trang**, không viết lại toàn bộ 1 lần. Thứ tự: Hôm nay (xong bản đầu) →
   Báo cáo (xong sub-tab Tổng quan, sub-tab Tuần/Tháng/Năm/Dự án CHƯA làm) → Nhật ký đọc
-  sách/Gundam → Tìm kiếm → Tuỳ biến.
+  sách/Gundam (xong sub-tab Tổng quan, sub-tab Trích dẫn/Chi tiết CHƯA làm) → Tìm kiếm → Tuỳ biến.
 - **Cắt bỏ**: import Nhật ký Day One (`parse_dayone_json`) — không port sang bản này.
-- **Giữ lại**: Kindle highlights, CalDAV (lịch Work + Reading log qua Reminders) — port khi tới
-  lượt trang tương ứng.
+- **Giữ lại**: Kindle highlights (CHƯA port — chỉ mới port phần `reading_log`/CalDAV phục vụ suy
+  luận Gundam/Sách), CalDAV (lịch Work CHƯA port, Reading log qua Reminders ĐÃ port ở
+  `src/lib/reading.ts`).
 - Mục tiêu tối ưu: hiệu năng/UX (điều hướng tức thời, không rerun toàn trang), và có thể thiết
   kế lại giao diện — không bắt buộc giữ nguyên pixel-for-pixel bản Streamlit.
 
@@ -41,14 +42,20 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
 - `src/components/Sidebar.tsx` — Client Component (cần `usePathname` để tô đậm mục đang xem),
   nav + sub-nav (khi có) đọc từ 2 mảng tĩnh `NAV_A`/`NAV_B` + `BAOCAO_SUBS`; mục nào chưa port
   đánh dấu "sắp có" (không phải link chết ẩn đi — người dùng cần thấy lộ trình còn lại).
-- `src/lib/analysis.ts` — `fetchAllSessions()`/`fetchMapping()`/`buildAnalysisRows()` tương
-  đương `load_db()`+`load_mapping()`+`prep_analysis_data()` ở repo gốc, NHƯNG **CHƯA port suy
-  luận Gundam/Sách** (`_assign_reading_sessions()`, cần `reading_log` + CalDAV — chưa tới lượt
-  port). Phiên tag chung "Gundam"/"Reading" hiện hiện nguyên tên tag đó ở cột `project`, giống
-  đúng hành vi "chưa suy luận được" của bản gốc khi thiếu `reading_log` — không phải bug, chỉ là
-  chưa đủ tính năng. `fetchAllSessions()` tự phân trang qua `.range()` (PostgREST giới hạn 1000
-  dòng/lần) — thêm truy vấn Supabase mới ở trang khác PHẢI nhớ làm tương tự nếu bảng có thể vượt
-  1000 dòng.
+- `src/lib/analysis.ts` — `fetchAllSessions()`/`fetchMapping()`/`buildAnalysisRows()` tương đương
+  `load_db()`+`load_mapping()`+ nửa đầu `prep_analysis_data()` ở repo gốc (join mapping, sinh cột
+  kỳ). `fetchAllSessions()` tự phân trang qua `.range()` (PostgREST giới hạn 1000 dòng/lần) —
+  thêm truy vấn Supabase mới ở trang khác PHẢI nhớ làm tương tự nếu bảng có thể vượt 1000 dòng.
+- `src/lib/reading.ts` — nửa sau `prep_analysis_data()`: `loadReadingContext()` đọc
+  `reading_log`+`gundam_overrides`+`book_overrides`, `applyReadingInference()` ghi đè `project`
+  của phiên tag chung `GUNDAM_TAG`/`BOOKS_TAG` thành tên series/cuốn cụ thể (tương đương
+  `_assign_reading_sessions()` — thuật toán "lần hoàn thành reminder gần nhất",
+  `pd.merge_asof(direction='nearest')` port thủ công bằng binary search vì JS không có sẵn).
+  GỌI HÀM NÀY Ở MỌI TRANG ĐỌC `sessions` (Báo cáo/Sách/Gundam/sau này Tìm kiếm) — bỏ sót sẽ khiến
+  trang đó hiện nguyên tag "Gundam"/"Reading" thay vì tên cụ thể, dù trang khác đã đúng.
+  `summarizeByBook()` tổng hợp số phần đã hoàn thành + phần gần nhất theo từng cuốn/series, dùng
+  ở `src/components/ReadingOverview.tsx` (Server Component dùng chung cho `/sach` và `/gundam` —
+  chỉ khác nhãn "cuốn"/"series" qua props, xem `_render_reading_overview()` ở app gốc).
 - `src/lib/stats.ts` — `streakStats()`/`topN()`/`weeklyTotals()` tương đương
   `_streak_stats()`/nhóm-rồi-sort/gộp-theo-tuần trong app gốc. `isoWeekKey()` (đặt ở
   `analysis.ts` vì `stats.ts` cần import lại) tính tuần ISO Thứ Hai-đầu-tuần, tương đương
