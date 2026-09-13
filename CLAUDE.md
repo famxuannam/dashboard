@@ -161,6 +161,17 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
     ghi chú dạng đọc, dù ghi chú CŨ (tạo từ app Streamlit, dùng `<ul>/<ol>` thật) vẫn hiện đúng.
     Thêm 1 nơi hiện `notes.note` mới (vd sau này port Nhật ký tuần/tháng gốc) PHẢI dùng đúng class
     `.note-content`, không tự viết `dangerouslySetInnerHTML` trần.
+  - **Bẫy layout: KHÔNG bọc `<QuillEditor>` (trực tiếp hay qua tổ tiên gần) trong 1 flex column**
+    (`display:flex; flex-direction:column`). Bug thật đã xác nhận bằng Playwright: khi cột phải
+    của `NoteEditor` dùng `flex flex-col gap-3`, `.ql-container{height:100%}` (CSS gốc của Quill)
+    khiến `.ql-editor` tính ra chiều cao LỚN HƠN chỗ cha nó thực sự có — phần thừa ra vô hình
+    (`.ql-editor` nền trong suốt) nhưng vẫn chặn click, khiến nút "Cập nhật" đứng ngay sau ô soạn
+    không bấm được dù nhìn hoàn toàn bình thường trên màn hình. Đã thử `height:auto` trên
+    `.ql-container`, `flex-shrink:0`, `display:flow-root` trên phần tử bọc trực tiếp — KHÔNG ăn
+    thua; chỉ khi bỏ hẳn `display:flex` khỏi TỔ TIÊN (dù cách `.note-quill` 2 cấp) mới hết bug.
+    Cột phải của `NoteEditor` vì vậy dùng `space-y-3` (margin giữa các con, không tạo flex
+    context) thay vì `flex flex-col gap-3`. Nếu sau này cần đặt `QuillEditor` trong 1 layout mới,
+    KHÔNG dùng flex/grid column làm tổ tiên trực tiếp hoặc gần — dùng `space-y-*`/margin thường.
 - `src/lib/records.ts` — `computeDayBadges()` tương đương `_compute_alltime_records()`: tra ngược
   ngày → badge "Kỷ lục" (hạng nhất/nhì/ba giờ nhiều nhất mọi thời đại + kỷ lục riêng theo
   Nhóm/Dự án, chỉ tính Nhóm/Dự án có ≥5 ngày dữ liệu). PHẢI truyền vào TOÀN BỘ lịch sử

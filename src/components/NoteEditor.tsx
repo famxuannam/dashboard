@@ -106,7 +106,7 @@ export default function NoteEditor({
           <div className="font-mono-num tnum text-[11.5px] text-[var(--text-3)]">{badge.dm}</div>
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="space-y-3">
           <DayBadges badges={badges} />
 
           {notes.length > 0 && (

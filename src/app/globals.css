@@ -121,6 +121,10 @@ body {
   background: var(--bg-2);
 }
 .note-quill .ql-container.ql-snow {
+  /* height:auto ép lại mặc định height:100% của Quill (giả định element cha có chiều cao rõ
+     ràng, không đúng ở đây) -- phòng ngừa thêm, dù nguyên nhân CHÍNH của bug "nút Cập nhật
+     không bấm được" là tổ tiên dùng flex column, đã sửa ở NoteEditor.tsx (xem CLAUDE.md). */
+  height: auto;
   border-color: var(--border);
   border-bottom-left-radius: 10px;
   border-bottom-right-radius: 10px;
