@@ -43,6 +43,11 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
   `src/lib/reading.ts`).
 - Mục tiêu tối ưu: hiệu năng/UX (điều hướng tức thời, không rerun toàn trang), và có thể thiết
   kế lại giao diện — không bắt buộc giữ nguyên pixel-for-pixel bản Streamlit.
+- **Ngoại lệ "không thêm dependency"**: đã thêm `quill` (v2.0.2, ghim thấp hơn latest 2.0.3 vì
+  2.0.3 dính advisory XSS qua tính năng xuất HTML — xem `npm audit`) cho ô soạn Ghi chú. Đây là
+  trường hợp thực sự cần: `notes.note` lưu HTML định dạng Quill (kể cả dữ liệu cũ từ app
+  Streamlit, dùng class `ql-indent-N`) — tự viết lại rich-text editor tương thích ngược sẽ tốn
+  công hơn nhiều so với dùng thẳng thư viện gốc.
 
 ## Kiến trúc
 
@@ -116,6 +121,25 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
 - `src/components/DayPicker.tsx` — Client Component (cần `useRouter` để điều hướng `?day=`) with
   nút ◀▶ + `<input type="date">`, giới hạn `max` = hôm nay (không cho chọn ngày tương lai, app
   thuần hồi cứu).
+- **`src/components/QuillEditor.tsx`/`NoteEditor.tsx`** — ô soạn ghi chú dùng `quill` thật (xem
+  "Ngoại lệ không thêm dependency" ở trên), tương đương `render_note_editor()` ở app gốc:
+  - `QuillEditor` cố ý **uncontrolled** giống hệt `streamlit-quill` — `initialHtml` chỉ áp dụng
+    lúc mount, đổi prop sau đó KHÔNG cập nhật nội dung đang gõ. Muốn nạp lại nội dung (bấm "Gộp"
+    lúc trình soạn đang mở) phải đổi `key` ở `NoteEditor` (biến `editorGen`) để ép remount — thay
+    thế cơ chế `quill_gen_key` của app gốc, cùng lý do gốc (component uncontrolled).
+  - Nút "Gộp" ghi chú nhanh: nối nội dung vào bản nháp, đánh dấu "chờ Lưu" — CHỈ xoá khỏi
+    `quick_notes` khi bấm "Cập nhật" (qua `saveDayNote`), bấm "Huỷ" thì giữ nguyên ghi chú nhanh
+    (bỏ đánh dấu). Đây là hành vi THẬT cần giữ (không phải chỉ để né bug Streamlit).
+  - Nút "Xoá" trên ghi chú nhanh: xoá NGAY qua `deleteQuickNoteById`, không có "chờ xoá" — app
+    gốc hoãn xoá tới khi bấm Cập nhật/Huỷ CHỈ để né bug remount của `streamlit-quill` chạy trong
+    iframe (component thật ở đây không có giới hạn đó, xem comment trong `actions.ts`).
+  - `isNoteEmpty()` (lib/text.ts) quyết định xoá hẳn dòng `notes` khi lưu chuỗi rỗng — PHẢI dùng
+    hàm này (bỏ thẻ HTML rồi so `trim() === ""`), không so trực tiếp `html.trim() === ""` vì Quill
+    để lại `"<p><br></p>"` cho ô trống (chuỗi đó khác `""`).
+  - `.note-quill`/`.note-content` trong `globals.css` — CSS ép Quill theo `var(--token)` (tương
+    đương `style_quill()`/`QUILL_CSS` ở app gốc, nhưng không cần "bơm lặp lại mỗi 400ms vào
+    iframe" vì Quill ở đây chạy thẳng trong DOM chính, không phải custom component trong iframe
+    riêng như Streamlit).
 - Mỗi trang mới port: 1 Server Component đọc Supabase trực tiếp (không qua API route riêng trừ
   khi cần gọi từ client), phần tương tác (form/nút) tách thành Client Component nhỏ + Server
   Action, theo đúng mẫu `NoteEditor.tsx`/`actions.ts` đã có.

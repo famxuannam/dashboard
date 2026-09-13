@@ -135,7 +135,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </>
       )}
 
-      <NoteEditor date={selectedDay} initialNote={note} quickNotes={quickNotes.map((q) => ({ id: q.id, note_text: q.text }))} />
+      <NoteEditor date={selectedDay} initialNote={note} quickNotes={quickNotes} />
 
       <div className="rounded-[14px] border border-[var(--border)] bg-[var(--card)] p-0 overflow-hidden">
         <h3 className="p-4 pb-0 text-[14px] font-semibold sm:p-5 sm:pb-0">Danh sách phiên</h3>

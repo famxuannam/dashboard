@@ -13,6 +13,12 @@ export function stripHtml(html: string): string {
     .trim();
 }
 
+/** Ghi chú coi như rỗng nếu sau khi bỏ thẻ HTML chỉ còn khoảng trắng (Quill để lại "<p><br></p>"
+ * cho ô soạn trống) — tương đương `_note_is_empty()` ở app gốc. */
+export function isNoteEmpty(html: string): boolean {
+  return stripHtml(html).trim() === "";
+}
+
 /** Đoạn trích ngắn quanh vị trí khớp `query` trong `text` (không phân biệt hoa/thường). */
 export function snippetAround(text: string, query: string, radius = 70): string {
   const flat = text.replace(/\s+/g, " ").trim();

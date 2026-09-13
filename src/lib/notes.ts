@@ -16,7 +16,7 @@ export async function fetchNotesInRange(startDate: string, endDateExclusive: str
   return map;
 }
 
-export type QuickNote = { id: number; text: string };
+export type QuickNote = { id: number; timeLabel: string; text: string };
 
 export async function fetchQuickNotesInRange(
   startDate: string,
@@ -33,7 +33,8 @@ export async function fetchQuickNotesInRange(
   const map = new Map<string, QuickNote[]>();
   for (const r of data ?? []) {
     const dateKey = r.ts.slice(0, 10);
-    map.set(dateKey, [...(map.get(dateKey) ?? []), { id: r.id, text: r.note_text }]);
+    const timeLabel = r.ts.match(/T?(\d{2}:\d{2})/)?.[1] ?? "";
+    map.set(dateKey, [...(map.get(dateKey) ?? []), { id: r.id, timeLabel, text: r.note_text }]);
   }
   return map;
 }
