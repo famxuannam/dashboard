@@ -57,6 +57,26 @@ export async function fetchMapping(): Promise<Map<string, string>> {
   return map;
 }
 
+/** Tên Dự án khác nhau đã xuất hiện trong `sessions` — dùng cho UI gán Nhóm ở Tuỳ biến (cần
+ * biết Dự án nào ĐANG được dùng, không chỉ những Dự án đã có mapping từ trước). */
+export async function fetchDistinctProjects(): Promise<string[]> {
+  const supabase = getSupabaseServerClient();
+  const projects = new Set<string>();
+  let from = 0;
+  for (;;) {
+    const { data, error } = await supabase
+      .from("sessions")
+      .select("project")
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) throw new Error(error.message);
+    if (!data || data.length === 0) break;
+    for (const r of data) projects.add(r.project);
+    if (data.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+  return Array.from(projects).sort();
+}
+
 function dateKeyOf(startTime: string): string {
   return startTime.slice(0, 10);
 }

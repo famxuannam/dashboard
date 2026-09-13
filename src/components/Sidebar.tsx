@@ -11,7 +11,7 @@ const NAV_A = [
   { label: "Tìm kiếm", href: "/tim-kiem", ready: true },
 ];
 
-const NAV_B = [{ label: "Tuỳ biến", href: "/tuy-bien", ready: false }];
+const NAV_B = [{ label: "Tuỳ biến", href: "/tuy-bien", ready: true }];
 
 const BAOCAO_SUBS = [
   { label: "Tổng quan", href: "/bao-cao", ready: true },

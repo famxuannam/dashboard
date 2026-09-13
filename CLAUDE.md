@@ -23,7 +23,9 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
 - **Port dần từng trang**, không viết lại toàn bộ 1 lần. Thứ tự: Hôm nay (xong bản đầu) →
   Báo cáo (xong sub-tab Tổng quan, sub-tab Tuần/Tháng/Năm/Dự án CHƯA làm) → Nhật ký đọc
   sách/Gundam (xong sub-tab Tổng quan, sub-tab Trích dẫn/Chi tiết CHƯA làm) → Tìm kiếm (xong bản
-  rút gọn — thiếu lịch Work/Kindle vì 2 nguồn đó chưa port) → Tuỳ biến.
+  rút gọn — thiếu lịch Work/Kindle vì 2 nguồn đó chưa port) → Tuỳ biến (mới port 2 mục: gán Dự
+  án→Nhóm + tải CSV Forest lên; đồng bộ lịch/Reminder, import Kindle, engine giao diện, backup/
+  khôi phục/xoá toàn bộ CHƯA làm).
 - **Cắt bỏ**: import Nhật ký Day One (`parse_dayone_json`) — không port sang bản này.
 - **Giữ lại**: Kindle highlights (CHƯA port — chỉ mới port phần `reading_log`/CalDAV phục vụ suy
   luận Gundam/Sách), CalDAV (lịch Work CHƯA port, Reading log qua Reminders ĐÃ port ở
@@ -67,6 +69,16 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
   hàm fetch trong repo này. `src/components/SearchBox.tsx` (Client Component) gọi action này qua
   debounce 300ms, KHÔNG dùng route `/api` riêng — gọi Server Action thẳng từ Client Component là
   đủ cho trường hợp này.
+- `src/lib/forest-import.ts` — `parseCsv()` (parser CSV thuần RFC4180, không dùng thư viện
+  ngoài) + `parseForestCsv()` tương đương `parse_forest_csv()` ở `import_parsers.py` gốc. Ngày
+  giờ tách bằng regex thủ công (`parseWallClock`/`formatWallClock`), KHÔNG qua `new Date()` —
+  tránh mọi suy diễn múi giờ vì CSV Forest là giờ treo tường thuần (xem quy ước "timestamp" trong
+  `supabase_schema.sql`). `src/app/tuy-bien/actions.ts` (`previewForestImport`/
+  `confirmForestImport`) tương đương luồng "Tải lên từ Forest": preview KHÔNG ghi Supabase, chỉ
+  confirm mới ghi đè toàn bộ bảng `sessions` (xoá sạch + chèn lại, khớp `save_db()` gốc — không
+  phải upsert từng dòng) sau khi lọc `deleted_sessions` và bỏ trùng khoá (start_time, end_time)
+  giữ dòng CŨ. `fetchMappingRows()`/`saveMappingRows()` port `load_mapping()`/`save_mapping()` —
+  lưu cũng ghi đè toàn bộ bảng `mapping`, dòng `category` rỗng bị bỏ (dự án coi như chưa gán).
 - `src/lib/stats.ts` — `streakStats()`/`topN()`/`weeklyTotals()` tương đương
   `_streak_stats()`/nhóm-rồi-sort/gộp-theo-tuần trong app gốc. `isoWeekKey()` (đặt ở
   `analysis.ts` vì `stats.ts` cần import lại) tính tuần ISO Thứ Hai-đầu-tuần, tương đương
