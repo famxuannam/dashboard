@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { searchApp, type DayHit } from "@/app/tim-kiem/actions";
+import { searchApp, type DayHit } from "@/app/(app)/tim-kiem/actions";
 
 function formatDateVN(dateKey: string): string {
   const [y, m, d] = dateKey.split("-").map(Number);

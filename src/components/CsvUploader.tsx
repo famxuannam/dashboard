@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { previewForestImport, confirmForestImport, type ForestPreview, type ForestImportResult } from "@/app/tuy-bien/actions";
+import { previewForestImport, confirmForestImport, type ForestPreview, type ForestImportResult } from "@/app/(app)/tuy-bien/actions";
 import { formatDurationMin } from "@/lib/date";
 
 export default function CsvUploader() {

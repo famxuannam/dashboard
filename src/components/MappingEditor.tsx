@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { saveMappingRows, type MappingRow } from "@/app/tuy-bien/actions";
+import { saveMappingRows, type MappingRow } from "@/app/(app)/tuy-bien/actions";
 
 export default function MappingEditor({ initialRows }: { initialRows: MappingRow[] }) {
   const [rows, setRows] = useState(initialRows);

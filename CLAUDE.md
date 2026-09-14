@@ -79,7 +79,7 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
   (dùng cho tìm kiếm VÀ cho `NoteEditor.tsx` khi cần hiện snippet — bản thân ô soạn ghi chú vẫn
   hiện HTML thô trong `<textarea>`, CHƯA có trình soạn WYSIWYG). `snippetAround()` cắt đoạn ngắn
   quanh từ khớp, dùng ở trang Tìm kiếm.
-- `src/app/tim-kiem/actions.ts` — `searchApp()` Server Action, tương đương `render_search()` ở
+- `src/app/(app)/tim-kiem/actions.ts` — `searchApp()` Server Action, tương đương `render_search()` ở
   app gốc NHƯNG chỉ tìm trên 4/6 nguồn đã port (ghi chú chính, ghi chú nhanh, phiên Forest, phần
   đọc/xem qua `reading_log`) — thiếu lịch Work (CalDAV) và trích dẫn Kindle vì 2 bảng đó chưa có
   hàm fetch trong repo này. `src/components/SearchBox.tsx` (Client Component) gọi action này qua
@@ -89,7 +89,7 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
   ngoài) + `parseForestCsv()` tương đương `parse_forest_csv()` ở `import_parsers.py` gốc. Ngày
   giờ tách bằng regex thủ công (`parseWallClock`/`formatWallClock`), KHÔNG qua `new Date()` —
   tránh mọi suy diễn múi giờ vì CSV Forest là giờ treo tường thuần (xem quy ước "timestamp" trong
-  `supabase_schema.sql`). `src/app/tuy-bien/actions.ts` (`previewForestImport`/
+  `supabase_schema.sql`). `src/app/(app)/tuy-bien/actions.ts` (`previewForestImport`/
   `confirmForestImport`) tương đương luồng "Tải lên từ Forest": preview KHÔNG ghi Supabase, chỉ
   confirm mới ghi đè toàn bộ bảng `sessions` (xoá sạch + chèn lại, khớp `save_db()` gốc — không
   phải upsert từng dòng) sau khi lọc `deleted_sessions` và bỏ trùng khoá (start_time, end_time)
@@ -110,7 +110,7 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
   ở Báo cáo → Tuần), `fetchNoteForDate()`/`fetchQuickNotesForDate()` (đúng 1 ngày, dùng ở Hôm
   nay), và `fetchAllNotesMap()`/`fetchAllQuickNotesMap()` (TOÀN BỘ lịch sử, dùng ở Tìm kiếm VÀ
   "Ngày này tuần trước/năm trước" ở Hôm nay — 2 hàm này ĐÃ chuyển vào đây từ
-  `src/app/tim-kiem/actions.ts` khi Hôm nay cũng cần tới, không còn định nghĩa riêng ở đó nữa).
+  `src/app/(app)/tim-kiem/actions.ts` khi Hôm nay cũng cần tới, không còn định nghĩa riêng ở đó nữa).
 - `src/lib/colors.ts` — `colorForName()` suy màu HSL ổn định từ tên (hash chuỗi), dùng cho
   `DayTimeline`/`RankedBars` — bản rút gọn, CHƯA có bảng màu cố định theo Nhóm + sắc độ cho Dự án
   con như `build_color_map()` ở app gốc (2 lần mở cùng 1 trang có thể ra 2 màu khác nhau cho cùng
@@ -126,7 +126,7 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
   thuần hồi cứu).
 - `src/components/SameDayCard.tsx` — 1 dòng tóm tắt 1 ngày bất kỳ (badge Kỷ lục, chip tổng
   quan/đọc sách, ghi chú nhanh, ghi chú chính) — dùng ở cả "Ngày này tuần trước" (1 thẻ) và "Ngày
-  này năm trước" (nhiều thẻ, mỗi năm 1 thẻ) trong `src/app/page.tsx`, tương đương
+  này năm trước" (nhiều thẻ, mỗi năm 1 thẻ) trong `src/app/(app)/page.tsx`, tương đương
   `render_same_day_last_week()`/`render_on_this_day()` gộp lại thành 1 component chung (khác biệt
   duy nhất giữa 2 nơi gọi là `label` truyền vào — ngắn "Thứ Bảy, 12/09" hay chỉ năm "2024"). CHƯA
   có chip "Lịch" (work_calendar/CalDAV chưa port) mà app gốc có ở cả 2 nơi này.
@@ -198,6 +198,55 @@ schema, cùng dữ liệu) — 2 app chạy song song được trong lúc chuy�
 - Mỗi trang mới port: 1 Server Component đọc Supabase trực tiếp (không qua API route riêng trừ
   khi cần gọi từ client), phần tương tác (form/nút) tách thành Client Component nhỏ + Server
   Action, theo đúng mẫu `NoteEditor.tsx`/`actions.ts` đã có.
+- **Đăng nhập Google + `ALLOWED_EMAIL`** — port của khối `[auth]`/`st.login`/`st.user` ở app gốc
+  (xem `app.py`, quanh biến `_auth_configured`). **Tuỳ chọn**: thiếu `GOOGLE_CLIENT_ID`/
+  `GOOGLE_CLIENT_SECRET` thì app chạy KHÔNG có cổng đăng nhập, giữ hành vi cũ y hệt app gốc khi
+  thiếu mục `[auth]`. Đã bật thì BẮT BUỘC phải có `ALLOWED_EMAIL` (đăng nhập Google thành công
+  vẫn bị chặn ở trang chờ nếu email không khớp) — an toàn kiểu mặc định chặn khi cấu hình dở
+  dang, không tự thêm code auto-tạo `ALLOWED_EMAIL`.
+  - **Không dùng thư viện auth** (next-auth/Auth.js/...) — tự viết OAuth2 authorization-code flow
+    + session cookie ký bằng HMAC-SHA256 qua Web Crypto (`crypto.subtle`), theo đúng nguyên tắc
+    "không thêm dependency trừ khi thực sự cần" — luồng Google OAuth chuẩn (redirect → đổi code
+    lấy token → gọi `userinfo`) không đủ phức tạp để cần 1 thư viện riêng, khác trường hợp
+    `quill` (rich-text editor thật sự khó tự viết tương thích ngược).
+  - `src/lib/auth.ts` — hàm THUẦN, không import `next/headers` (để dùng được cả trong
+    `middleware.ts`, chạy Edge runtime, lẫn Server Component/Route Handler, chạy Node runtime):
+    `isAuthConfigured()`, `allowedEmail()` (ném lỗi nếu thiếu `ALLOWED_EMAIL` dù đã bật `[auth]`),
+    `createSessionToken()`/`verifySessionToken()` (payload `{email, exp}` base64url + chữ ký HMAC,
+    KHÔNG mã hoá — không chứa gì nhạy cảm ngoài email đã public qua Google, chỉ cần chống giả
+    mạo/sửa đổi). `AUTH_COOKIE_SECRET` (bắt buộc khi bật auth) là khoá ký — đổi giá trị này đăng
+    xuất toàn bộ session đang có (mất khả năng verify token cũ).
+  - `src/lib/session.ts` — `getSession()` dùng `cookies()` từ `next/headers`, CHỈ gọi được từ
+    Server Component/Server Action (không phải middleware) — tách riêng khỏi `auth.ts` đúng vì lý
+    do trên.
+  - `src/middleware.ts` — chặn TOÀN BỘ route trừ `/login` và `/api/auth/*` (regex `matcher`), là
+    nơi DUY NHẤT so `session.email` với `ALLOWED_EMAIL`; `/api/auth/callback` cố ý KHÔNG tự so
+    sánh (xem comment trong file) để tránh 2 nơi cùng kiểm tra dễ lệch nhau. Next.js 16.3.5 báo
+    "middleware" file convention deprecated (khuyên đổi tên thành `proxy.ts`) — CHƯA đổi vì vẫn
+    chạy đúng, chỉ là cảnh báo, và codemod tự động (`@next/codemod middleware-to-proxy`) chưa cần
+    thiết cho 1 file nhỏ như này; nếu Next.js sau này GỠ HẲN convention cũ, đổi tên file
+    `middleware.ts` → `proxy.ts` (nội dung export gần như giữ nguyên).
+  - `src/app/api/auth/login|callback|logout/route.ts` — 3 Route Handler tương ứng
+    `st.login`/callback ngầm của Streamlit/`st.logout`. `login` tạo `state` ngẫu nhiên chống CSRF
+    (cookie `fd_oauth_state`, ngắn hạn 10 phút), `callback` đổi code lấy access token rồi gọi
+    thẳng `https://www.googleapis.com/oauth2/v3/userinfo` lấy email (KHÔNG tự verify chữ ký
+    id_token/JWT bằng JWKS của Google — gọi endpoint chính chủ bằng access token vừa nhận đã đủ
+    tin cậy cho 1 lần đăng nhập, tự verify JWT tốn công hơn nhiều mà không thêm an toàn thực tế ở
+    quy mô 1 người dùng).
+  - **Cấu trúc route group `(app)`**: mọi trang cần Sidebar (`Hôm nay`, `Báo cáo`, `Sách`,
+    `Gundam`, `Tìm kiếm`, `Tuỳ biến`) đã CHUYỂN vào `src/app/(app)/` (route group — không đổi
+    URL) với layout riêng `src/app/(app)/layout.tsx` (chứa `<Sidebar>` + khung `<main>`, trước đây
+    nằm ở `src/app/layout.tsx`). `src/app/login/page.tsx` nằm NGOÀI group này nên không thừa
+    hưởng Sidebar. `src/app/layout.tsx` (root) giờ chỉ còn `<html>/<body>` + fonts, không còn
+    biết gì về Sidebar/flex layout. Thêm trang mới cần Sidebar → đặt trong `(app)/`; trang
+    KHÔNG cần Sidebar (như `/login`) → đặt ngoài group, cạnh `login/`.
+  - `Sidebar.tsx` nhận prop `accountEmail?: string | null` (truyền từ `(app)/layout.tsx` qua
+    `getSession()`) — chỉ hiện khối "Tài khoản" (email + nút Đăng xuất) khi có giá trị, tức khi
+    CÓ cấu hình đăng nhập VÀ có session hợp lệ. Tương đương thẻ "Tài khoản" ở trang Tuỳ biến app
+    gốc, nhưng đặt cố định dưới Sidebar (mọi trang đều thấy) thay vì chỉ ở 1 trang.
+  - Tạo OAuth Client ID: console.cloud.google.com → APIs & Services → Credentials → OAuth client
+    ID (Web application), Authorized redirect URI = `<domain-app>/api/auth/callback`. Xem
+    `.env.local.example` cho danh sách đầy đủ biến môi trường cần điền.
 
 ## Quy ước
 
@@ -222,5 +271,8 @@ npm install
 cp .env.local.example .env.local   # điền SUPABASE_URL/SUPABASE_KEY thật
 npm run dev
 ```
+
+Đăng nhập Google là tuỳ chọn — không điền `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` trong
+`.env.local` thì chạy local không cần qua cổng đăng nhập nào (xem mục "Đăng nhập Google" ở trên).
 
 `npm run build` để kiểm tra type/lint trước khi commit các thay đổi lớn.

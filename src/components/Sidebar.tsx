@@ -47,7 +47,7 @@ function NavRow({ label, ready, active, href }: { label: string; ready: boolean;
   );
 }
 
-export default function Sidebar() {
+export default function Sidebar({ accountEmail }: { accountEmail?: string | null }) {
   const pathname = usePathname();
   const onBaoCao = pathname.startsWith("/bao-cao");
 
@@ -105,6 +105,19 @@ export default function Sidebar() {
           <NavRow key={item.href} label={item.label} ready={item.ready} href={item.href} active={pathname === item.href} />
         ))}
       </nav>
+
+      {/* Chỉ hiện khi có cấu hình đăng nhập Google (GOOGLE_CLIENT_ID/SECRET) -- tương đương thẻ
+          "Tài khoản" (Đăng nhập với .../Đăng xuất) ở trang Tuỳ biến app gốc. */}
+      {accountEmail && (
+        <div className="mt-auto flex flex-col gap-1 border-t border-[var(--divider)] px-2.5 pt-3">
+          <div className="truncate text-[11.5px] text-[var(--text-3)]" title={accountEmail}>
+            {accountEmail}
+          </div>
+          <a href="/api/auth/logout" className="text-[12.5px] font-medium text-[var(--text-2)] hover:text-[var(--text)]">
+            Đăng xuất
+          </a>
+        </div>
+      )}
     </aside>
   );
 }
